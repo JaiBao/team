@@ -601,22 +601,31 @@
             if (teamIndex !== -1) {
                 const team = teams[teamIndex];
 
-                // 將成員加回待組隊列表
-                participants.push(...team.members);
+                // 將成員加回待組隊列表，並保持原有順序
+                const membersToAdd = [...team.members];
 
-                // 按照原始序號重新排序待組隊列表
-                participants.sort((a, b) => a.order - b.order);
+                // 先找出這些成員原本應該插入的位置
+                membersToAdd.forEach(member => {
+                    // 找出比當前成員序號小的最後一個參與者的索引
+                    let insertIndex = participants.findIndex(p => p.order > member.order);
+                    if (insertIndex === -1) {
+                        // 如果沒有比它大的，就插入到最後
+                        insertIndex = participants.length;
+                    }
+                    // 插入到正確位置
+                    participants.splice(insertIndex, 0, member);
+                });
 
                 // 移除隊伍
                 teams.splice(teamIndex, 1);
+
+                // 重新計算待組隊列表的順序（以防萬一）
+                participants.sort((a, b) => a.order - b.order);
 
                 // 更新顯示
                 updateWaitingList();
                 updateTeamsList();
                 saveToLocalStorage();
-
-                // 檢查是否有新的組隊可能
-                checkForTeams();
             }
         }
 
