@@ -155,6 +155,11 @@
 
         .tab-content {
             display: none;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
         }
 
         .tab-content.active {
@@ -217,6 +222,12 @@
             cursor: pointer;
             border-radius: 4px;
         }
+
+        .scrollable-table {
+            max-height: 300px;
+            overflow-y: auto;
+            display: block;
+        }
     </style>
 </head>
 
@@ -245,21 +256,23 @@
 
         <div class="waiting-list">
             <h2>待組隊列表 (共<span id="waitingCount">0</span>人)</h2>
-            <table id="waitingTable">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="selectAllWaiting" onclick="toggleSelectAll('waiting')"></th>
-                        <th>序號</th>
-                        <th>帳號</th>
-                        <th>名稱</th>
-                        <th>數字</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="waitingList">
-                    <!-- 待組隊人員列表將在這裡動態生成 -->
-                </tbody>
-            </table>
+            <div class="scrollable-table">
+                <table id="waitingTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllWaiting" onclick="toggleSelectAll('waiting')"></th>
+                            <th>序號</th>
+                            <th>帳號</th>
+                            <th>名稱</th>
+                            <th>數字</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="waitingList">
+                        <!-- 待組隊人員列表將在這裡動態生成 -->
+                    </tbody>
+                </table>
+            </div>
             <div class="manual-pairing-controls">
                 <button onclick="manualCreateTeam()" id="createTeamBtn" disabled>創建隊伍 (需選3人)</button>
                 <button onclick="removeSelectedParticipants()">移除選中</button>
@@ -342,6 +355,27 @@
                 return;
             }
 
+            // 檢查帳號是否已存在
+            const existingInWaiting = participants.find(p => p.account === account);
+            const existingInTeams = isAccountInTeams(account);
+
+            if (existingInTeams) {
+                alert('該帳號已在已組隊列表中', 'error');
+                return;
+            }
+
+            if (existingInWaiting) {
+                if (!confirm(`帳號 ${account} 已存在於待組隊列表，當前數字為 ${existingInWaiting.number}。要更新為 ${number} 嗎？`)) {
+                    return;
+                }
+                // 更新現有參與者的數字
+                existingInWaiting.number = number;
+                updateWaitingList();
+                saveToLocalStorage();
+                showAddStatus(`已更新 ${account} 的數字為 ${number}`, 'success');
+                return;
+            }
+
             isAdding = true;
             const btn = document.getElementById('addParticipantBtn');
             btn.disabled = true;
@@ -374,6 +408,15 @@
                 btn.classList.remove('btn-disabled');
                 document.getElementById('account').focus();
             }, 1000);
+        }
+
+        function isAccountInTeams(account) {
+            for (const team of teams) {
+                if (team.members.some(member => member.account === account)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         function showAddStatus(message, type) {
