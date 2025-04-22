@@ -604,6 +604,9 @@
                 // 將成員加回待組隊列表
                 participants.push(...team.members);
 
+                // 按照原始序號重新排序待組隊列表
+                participants.sort((a, b) => a.order - b.order);
+
                 // 移除隊伍
                 teams.splice(teamIndex, 1);
 
@@ -611,6 +614,9 @@
                 updateWaitingList();
                 updateTeamsList();
                 saveToLocalStorage();
+
+                // 檢查是否有新的組隊可能
+                checkForTeams();
             }
         }
 
