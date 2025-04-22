@@ -142,14 +142,14 @@
 
         .tab-button {
             padding: 8px 16px;
-            background-color: #f1f1f1;
+            background-color: grey;
             border: none;
             cursor: pointer;
             margin-right: 5px;
         }
 
         .tab-button.active {
-            background-color: #4CAF50;
+            background-color: #2196F3;
             color: white;
         }
 
@@ -227,6 +227,75 @@
             max-height: 300px;
             overflow-y: auto;
             display: block;
+        }
+
+        /* 手機版專用樣式 */
+        @media only screen and (max-width: 600px) {
+            button {
+                padding: 12px 16px !important;
+                font-size: 16px !important;
+                min-width: 70px;
+                margin: 8px 0 !important;
+                border-radius: 8px;
+                background-color: #2196F3;
+                /* 藍色按鈕 */
+                color: white;
+                border: none;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            }
+
+            .team-actions button {
+                flex: 1 0 40%;
+                margin: 5px !important;
+                padding: 10px !important;
+            }
+
+            .manual-pairing-controls button {
+                width: 100%;
+                margin: 5px 0 !important;
+            }
+
+            .copy-btn {
+                width: 100%;
+                padding: 12px !important;
+            }
+
+            .reset-btn {
+                width: 100%;
+                padding: 14px !important;
+                font-size: 16px !important;
+            }
+
+            .tab-button {
+                padding: 12px 16px !important;
+                font-size: 16px !important;
+                flex: 1;
+                text-align: center;
+            }
+
+
+            .status-badge {
+                background-color: #2196F3;
+            }
+
+            .tab-button.active {
+                background-color: #2196F3;
+            }
+
+            .team {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+
+            .team.completed {
+                background-color: #f0f0f0;
+                /* 改為灰色背景 */
+            }
+
+            .sum-highlight {
+                color: #2196F3;
+                /* 改為藍色 */
+            }
         }
     </style>
 </head>
