@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三人組隊活動</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-section,
+        .waiting-list,
+        .teams-section,
+        .manual-pairing {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .team {
+            background-color: #e6f7ff;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .team.completed {
+            background-color: #e8f5e9;
+        }
+
+        .team-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .team-actions button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        input,
+        button,
+        select {
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px 0;
+        }
+
+        .manual-pairing-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4caf50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .btn-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .sum-highlight {
+            font-weight: bold;
+            color: #e91e63;
+        }
+
+        .reset-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff8e1;
+            border-radius: 5px;
+        }
+
+        .reset-btn {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+        }
+
+        .reset-btn:hover {
+            background-color: #e64a19;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .tab-button {
+            padding: 8px 16px;
+            background-color: #f1f1f1;
+            border: none;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .team-info {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .copy-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>三人組隊活動</h1>
+    <p>輸入參與者資訊，當三個人的數字加起來大於或等於100,000時，系統會自動配對成隊伍。</p>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>新增參與者</h2>
+            <div>
+                <label for="account">帳號:</label>
+                <input type="text" id="account" required>
+            </div>
+            <div>
+                <label for="name">名稱:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div>
+                <label for="number">數字:</label>
+                <input type="number" id="number" required>
+            </div>
+            <button id="addParticipantBtn" onclick="addParticipant()">加入列表</button>
+            <div id="addStatus" style="margin-top: 5px; color: #4caf50;"></div>
+        </div>
+
+        <div class="waiting-list">
+            <h2>待組隊列表 (共<span id="waitingCount">0</span>人)</h2>
+            <table id="waitingTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllWaiting" onclick="toggleSelectAll('waiting')"></th>
+                        <th>序號</th>
+                        <th>帳號</th>
+                        <th>名稱</th>
+                        <th>數字</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="waitingList">
+                    <!-- 待組隊人員列表將在這裡動態生成 -->
+                </tbody>
+            </table>
+            <div class="manual-pairing-controls">
+                <button onclick="manualCreateTeam()" id="createTeamBtn" disabled>創建隊伍 (需選3人)</button>
+                <button onclick="removeSelectedParticipants()">移除選中</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-container">
+        <h2>已組隊列表</h2>
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="openTab('activeTeams')">已組隊 (<span
+                    id="activeTeamsCount">0</span>)</button>
+            <button class="tab-button" onclick="openTab('completedTeams')">已完成 (<span
+                    id="completedTeamsCount">0</span>)</button>
+        </div>
+
+        <div id="activeTeams" class="tab-content active">
+            <!-- 已組隊但未完成的隊伍將在這裡顯示 -->
+        </div>
+
+        <div id="completedTeams" class="tab-content">
+            <!-- 已完成的隊伍將在這裡顯示 -->
+        </div>
+    </div>
+
+    <div class="reset-section">
+        <h3>系統管理</h3>
+        <button class="reset-btn" onclick="resetAllData()">清除所有資料 (每日重置)</button>
+        <p><small>注意: 此操作將清空所有待組隊和已組隊資料，無法復原！</small></p>
+    </div>
+
+    <!-- 申請組隊模態框 -->
+    <div id="teamRequestModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>申請組隊資訊</h3>
+            <div class="team-info" id="teamRequestInfo"></div>
+            <button class="copy-btn" onclick="copyTeamInfo()">複製資訊</button>
+        </div>
+    </div>
+
+    <script>
+        let participants = [];
+        let teams = [];
+        let counter = 1;
+        let isAdding = false; // 防止連續點擊標記
+
+        // 初始化頁面
+        document.addEventListener('DOMContentLoaded', function () {
+            loadFromLocalStorage();
+            updateWaitingList();
+            updateTeamsList();
+
+            // 監聽輸入框回車鍵
+            document.getElementById('number').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    addParticipant();
+                }
+            });
+
+            // 顯示今天的日期
+            const today = new Date().toLocaleDateString();
+            document.title += " - " + today;
+        });
+
+        function addParticipant() {
+            if (isAdding) return;
+
+            const account = document.getElementById('account').value.trim();
+            const name = document.getElementById('name').value.trim();
+            const number = parseInt(document.getElementById('number').value);
+
+            if (!account || !name || isNaN(number)) {
+                showAddStatus('請填寫所有欄位', 'error');
+                return;
+            }
+
+            if (number <= 0) {
+                showAddStatus('數字必須大於0', 'error');
+                return;
+            }
+
+            isAdding = true;
+            const btn = document.getElementById('addParticipantBtn');
+            btn.disabled = true;
+            btn.classList.add('btn-disabled');
+
+            const participant = {
+                id: Date.now(), // 使用時間戳記作為唯一ID
+                order: counter++,
+                account: account,
+                name: name,
+                number: number
+            };
+
+            participants.push(participant);
+            showAddStatus(`已添加: ${name} (${number})`, 'success');
+
+            updateWaitingList();
+            checkForTeams();
+            saveToLocalStorage();
+
+            // 清空輸入欄位
+            document.getElementById('account').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('number').value = '';
+
+            // 恢復按鈕狀態
+            setTimeout(() => {
+                isAdding = false;
+                btn.disabled = false;
+                btn.classList.remove('btn-disabled');
+                document.getElementById('account').focus();
+            }, 1000);
+        }
+
+        function showAddStatus(message, type) {
+            const statusDiv = document.getElementById('addStatus');
+            statusDiv.textContent = message;
+            statusDiv.style.color = type === 'error' ? '#f44336' : '#4caf50';
+
+            if (type === 'error') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                }, 3000);
+            }
+        }
+
+        function updateWaitingList() {
+            const tbody = document.getElementById('waitingList');
+            tbody.innerHTML = '';
+
+            participants.forEach(p => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="waiting-checkbox" data-id="${p.id}"></td>
+                    <td>${p.order}</td>
+                    <td>${p.account}</td>
+                    <td>${p.name}</td>
+                    <td>${p.number}</td>
+                    <td><button onclick="removeParticipant('${p.id}')">移除</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('waitingCount').textContent = participants.length;
+            updateCreateTeamButton();
+        }
+
+        function removeParticipant(id) {
+            participants = participants.filter(p => p.id !== parseInt(id));
+            updateWaitingList();
+            saveToLocalStorage();
+        }
+
+        function removeSelectedParticipants() {
+            const checkboxes = document.querySelectorAll('.waiting-checkbox:checked');
+            const idsToRemove = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+
+            participants = participants.filter(p => !idsToRemove.includes(p.id));
+            updateWaitingList();
+            saveToLocalStorage();
+        }
+
+        function checkForTeams() {
+            // 如果參與者不足3人，直接返回
+            if (participants.length < 3) return;
+
+            // 嘗試找出三個數字加起來大於等於100000的組合
+            for (let i = 0; i < participants.length - 2; i++) {
+                for (let j = i + 1; j < participants.length - 1; j++) {
+                    for (let k = j + 1; k < participants.length; k++) {
+                        const sum = participants[i].number + participants[j].number + participants[k].number;
+                        if (sum >= 100000) {
+                            // 找到匹配的隊伍
+                            createTeam([participants[i], participants[j], participants[k]]);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createTeam(members) {
+            const team = {
+                id: Date.now(),
+                members: [...members],
+                completed: false,
+                createdAt: new Date().toLocaleString()
+            };
+
+            teams.push(team);
+
+            // 從待組隊列表中移除這三人
+            participants = participants.filter(p =>
+                !members.some(m => m.id === p.id)
+            );
+
+            // 更新顯示
+            updateWaitingList();
+            updateTeamsList();
+            saveToLocalStorage();
+
+            // 檢查是否還有其他可能的組合
+            checkForTeams();
+        }
+
+        function manualCreateTeam() {
+            const checkboxes = document.querySelectorAll('.waiting-checkbox:checked');
+
+            if (checkboxes.length !== 3) {
+                alert('請選擇正好3人來創建隊伍');
+                return;
+            }
+
+            const ids = Array.from(checkboxes).map(cb => parseInt(cb.dataset.id));
+            const selectedParticipants = participants.filter(p => ids.includes(p.id));
+
+            const sum = selectedParticipants.reduce((total, p) => total + p.number, 0);
+            if (sum < 100000) {
+                if (!confirm(`這三個人的數字總和為 ${sum}，小於100,000。確定要創建隊伍嗎？`)) {
+                    return;
+                }
+            }
+
+            createTeam(selectedParticipants);
+        }
+
+        function updateTeamsList() {
+            const activeTeamsDiv = document.getElementById('activeTeams');
+            const completedTeamsDiv = document.getElementById('completedTeams');
+
+            activeTeamsDiv.innerHTML = '';
+            completedTeamsDiv.innerHTML = '';
+
+            let activeCount = 0;
+            let completedCount = 0;
+
+            teams.forEach((team, index) => {
+                const teamDiv = document.createElement('div');
+                teamDiv.className = `team ${team.completed ? 'completed' : ''}`;
+                teamDiv.id = `team-${team.id}`;
+
+                let teamHTML = `<h3>隊伍 ${index + 1} <small>(${team.createdAt})</small></h3>`;
+                if (team.completed) {
+                    teamHTML += '<span class="status-badge">已完成</span>';
+                }
+
+                teamHTML += '<ul>';
+
+                team.members.forEach(member => {
+                    teamHTML += `<li>${member.order}. ${member.name} (${member.account}) - 數字: ${member.number}</li>`;
+                });
+
+                const sum = team.members.reduce((total, m) => total + m.number, 0);
+                const sumClass = sum >= 100000 ? 'sum-highlight' : '';
+                teamHTML += `</ul><p class="${sumClass}">總和: ${sum} ${sum < 100000 ? '(未達標)' : ''}</p>`;
+
+                // 根據隊伍狀態添加不同的按鈕
+                teamHTML += `<div class="team-actions">`;
+                if (!team.completed) {
+                    teamHTML += `<button onclick="showTeamRequest(${team.id})">申請組隊</button>`;
+                    teamHTML += `<button onclick="toggleTeamCompletion(${team.id})">標記完成</button>`;
+                } else {
+                    teamHTML += `<button onclick="toggleTeamCompletion(${team.id})">取消完成</button>`;
+                }
+                teamHTML += `<button onclick="disbandTeam(${team.id})">解散隊伍</button>`;
+                teamHTML += `</div>`;
+
+                teamDiv.innerHTML = teamHTML;
+
+                if (team.completed) {
+                    completedTeamsDiv.appendChild(teamDiv);
+                    completedCount++;
+                } else {
+                    activeTeamsDiv.appendChild(teamDiv);
+                    activeCount++;
+                }
+            });
+
+            document.getElementById('activeTeamsCount').textContent = activeCount;
+            document.getElementById('completedTeamsCount').textContent = completedCount;
+        }
+
+        function toggleTeamCompletion(teamId) {
+            const team = teams.find(t => t.id === teamId);
+            if (team) {
+                team.completed = !team.completed;
+                updateTeamsList();
+                saveToLocalStorage();
+            }
+        }
+
+        function disbandTeam(teamId) {
+            const teamIndex = teams.findIndex(t => t.id === teamId);
+            if (teamIndex !== -1) {
+                const team = teams[teamIndex];
+
+                // 將成員加回待組隊列表
+                participants.push(...team.members);
+
+                // 移除隊伍
+                teams.splice(teamIndex, 1);
+
+                // 更新顯示
+                updateWaitingList();
+                updateTeamsList();
+                saveToLocalStorage();
+            }
+        }
+
+        function showTeamRequest(teamId) {
+            const team = teams.find(t => t.id === teamId);
+            if (!team) return;
+
+            // 構建隊伍資訊文本
+            let teamInfo = '';
+            team.members.forEach(member => {
+                teamInfo += `${member.account} ${member.number}\n`;
+            });
+            teamInfo += '申請組隊';
+
+            document.getElementById('teamRequestInfo').textContent = teamInfo;
+            document.getElementById('teamRequestModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('teamRequestModal').style.display = 'none';
+        }
+
+        function copyTeamInfo() {
+            const teamInfo = document.getElementById('teamRequestInfo').textContent;
+            navigator.clipboard.writeText(teamInfo).then(() => {
+                alert('已複製隊伍資訊到剪貼簿！');
+                closeModal();
+            }).catch(err => {
+                console.error('複製失敗: ', err);
+                alert('複製失敗，請手動選取文字複製。');
+            });
+        }
+
+        function toggleSelectAll(type) {
+            const checkboxes = document.querySelectorAll(`.${type}-checkbox`);
+            const selectAll = document.getElementById(`selectAll${type.charAt(0).toUpperCase() + type.slice(1)}`);
+
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+
+            if (type === 'waiting') {
+                updateCreateTeamButton();
+            }
+        }
+
+        function updateCreateTeamButton() {
+            const checkboxes = document.querySelectorAll('.waiting-checkbox:checked');
+            const createTeamBtn = document.getElementById('createTeamBtn');
+
+            createTeamBtn.disabled = checkboxes.length !== 3;
+        }
+
+        // 切換標籤頁
+        function openTab(tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // 監聽待組隊列表的checkbox變化
+        document.getElementById('waitingList').addEventListener('change', function (e) {
+            if (e.target.classList.contains('waiting-checkbox')) {
+                updateCreateTeamButton();
+
+                // 更新全選checkbox狀態
+                const checkboxes = document.querySelectorAll('.waiting-checkbox');
+                const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+                document.getElementById('selectAllWaiting').checked = allChecked;
+            }
+        });
+
+        // 本地存儲功能
+        function saveToLocalStorage() {
+            localStorage.setItem('teamActivityData', JSON.stringify({
+                participants,
+                teams,
+                counter
+            }));
+        }
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem('teamActivityData');
+            if (data) {
+                const parsed = JSON.parse(data);
+                participants = parsed.participants || [];
+                teams = parsed.teams || [];
+                counter = parsed.counter || 1;
+            }
+        }
+
+        // 重置所有資料
+        function resetAllData() {
+            if (confirm('確定要清除所有資料嗎？此操作無法復原！')) {
+                participants = [];
+                teams = [];
+                counter = 1;
+
+                updateWaitingList();
+                updateTeamsList();
+                saveToLocalStorage();
+
+                alert('所有資料已清除，系統已重置！');
+            }
+        }
+
+        // 點擊模態框外部關閉
+        window.onclick = function (event) {
+            const modal = document.getElementById('teamRequestModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+
+</html>
